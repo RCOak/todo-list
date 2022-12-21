@@ -1,36 +1,92 @@
-import React, { useState }from "react";
-
+import React, { useState, useEffect }from "react";
+import Task from "./Task.jsx";
+import Form from "./Form.jsx";
 //include images into your bundle
 
 
 //create your first component
 const Home = () => {
-	const [inputValue, setInputValue] = useState("");
-	const [todos, setTodos] = useState([])
+	//States
+	const [task, setTask] = useState("");
+	const [list, setList] = useState([])
+	
+	//Hooks
+	useEffect(() => {
+		fetch("https://assets.breatheco.de/apis/fake/todos/user/rcoak", {
+			method: "GET",
+			headers: { "Content-Type": "application/json" },
+		})
+			.then((response) => {
+				return response.json();
+			})
+			.then((data) => {
+				setList(data);
+			})
+			.catch((error) => {
+				console.log("Error", error);
+			});
+	}, []);
+	
+//Functions
+	const apiUpdate = () => {
+		fetch("https://assets.breatheco.de/apis/fake/todos/user/rcoak", {
+			method: "PUT",
+			body: JSON.stringify(list),
+			headers: { "Content-Type": "application/json" },
+		})
+			.then((response) => {
+				return response.json();
+			})
+			.then((data) => {
+				console.log(data);
+			})
+			.catch((error) => {
+				console.log("Error", error);
+			});
+	};
+
+	const inputHandler = (ev) => {
+		setTask(ev.target.value);
+	};
+
+	const addTask = (ev) => {
+		setList([...list, { label: task, done: false }]);
+		setTask("");
+		apiUpdate();
+	};
+
+	const cleanList = () => {
+		let delTodo = list.splice(list.length);
+		setList(delTodo);
+		apiUpdate();
+	};
+
+	const removeTask = (index) => {
+		const newArray = list.filter((item, i) => i != index);
+		setList(newArray);
+		apiUpdate();
+	};
+
 	return (
-		<div className="container">
-			<h1>Todo List</h1>
-			<ul>
-				<li>
-					<input type="text" onChange={(e) => 
-						setInputValue(e.target.value)}
-						value={inputValue}
-						onKeyUp={(e) => {
-							if (e.key === "Enter") {setTodos(todos.concat([inputValue]));
-							setInputValue("");
-						}
-						}}
-						placeholder="What do you need to do?"></input>
-				</li>
-				{todos.map((item, index) => (<li>
-					{item}{" "}
-					<i className="fas fa-trash-alt"
-					onClick={() => setTodos(todos.filter((t, currentIndex) => index != currentIndex
-						))}></i>
-				</li>))}
-			</ul>
-			<div>{todos.length} tasks</div>
-		</div>
+		<>
+			<Form
+				input={task}
+				inputHandler={inputHandler}
+				addTask={task.length > 0 ? addTask : null}
+				cleanList={cleanList}
+			/>
+			<div className="list">
+				<ul>
+					{list.map((task, i) => (
+						<Task
+							key={i}
+							task={task.label}
+							removeTask={() => removeTask(i)}
+						/>
+					))}
+				</ul>
+			</div>
+		</>
 	);
 };
 
